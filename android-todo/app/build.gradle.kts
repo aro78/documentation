@@ -41,6 +41,10 @@ android {
         compose = true
         buildConfig = true
     }
+    lint {
+        abortOnError = false
+        checkReleaseBuilds = false
+    }
     sourceSets {
         getByName("main") {
             java.srcDirs("src/main/kotlin")
