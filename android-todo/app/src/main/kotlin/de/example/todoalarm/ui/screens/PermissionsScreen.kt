@@ -38,9 +38,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import de.example.todoalarm.R
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,18 +53,10 @@ fun PermissionsScreen(onContinue: () -> Unit) {
         ActivityResultContracts.RequestPermission()
     ) { notifGranted = it }
 
-    // Re-check on resume because users come back from system settings
-    val lifecycleOwner = LocalLifecycleOwner.current
-    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                notifGranted = checkNotifGranted(context)
-                exactGranted = checkExactGranted(context)
-                fsiGranted = checkFsiGranted(context)
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    fun refresh() {
+        notifGranted = checkNotifGranted(context)
+        exactGranted = checkExactGranted(context)
+        fsiGranted = checkFsiGranted(context)
     }
 
     Scaffold(
@@ -104,8 +93,13 @@ fun PermissionsScreen(onContinue: () -> Unit) {
             PermissionRow(
                 label = stringResource(R.string.perm_battery),
                 granted = false,
-                actionable = true,
             ) { openBatteryOptimizationSettings(context) }
+            OutlinedButton(
+                onClick = { refresh() },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.perm_refresh))
+            }
             Button(
                 onClick = onContinue,
                 modifier = Modifier.fillMaxWidth(),
@@ -120,7 +114,6 @@ fun PermissionsScreen(onContinue: () -> Unit) {
 private fun PermissionRow(
     label: String,
     granted: Boolean,
-    actionable: Boolean = true,
     onClick: () -> Unit,
 ) {
     Row(
@@ -135,8 +128,8 @@ private fun PermissionRow(
             modifier = Modifier.weight(1f),
             style = MaterialTheme.typography.bodyMedium,
         )
-        if (!granted && actionable) {
-            OutlinedButton(onClick = onClick) { Text(stringResource(R.string.perm_continue)) }
+        if (!granted) {
+            OutlinedButton(onClick = onClick) { Text(stringResource(R.string.perm_open)) }
         }
     }
 }

@@ -2,7 +2,6 @@ package de.example.todoalarm.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,27 +9,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -41,13 +30,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import de.example.todoalarm.R
-import de.example.todoalarm.util.TimeFormat
 import de.example.todoalarm.viewmodel.TaskEditViewModel
+import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.TimeZone
+import java.util.Date
+import java.util.Locale
+
+private val dateFormat = SimpleDateFormat("dd.MM.yyyy", Locale.GERMAN)
+private val timeFormat = SimpleDateFormat("HH:mm", Locale.GERMAN)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,9 +52,6 @@ fun TaskEditScreen(
     LaunchedEffect(taskId) { vm.load(taskId) }
     val state by vm.state.collectAsState()
 
-    var showDatePicker by remember { mutableStateOf(false) }
-    var showTimePicker by remember { mutableStateOf(false) }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -71,15 +61,13 @@ fun TaskEditScreen(
                         else stringResource(R.string.edit_edit_title)
                     )
                 },
-                navigationIcon = {
-                    IconButton(onClick = onDone) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_cancel))
-                    }
-                },
                 actions = {
+                    TextButton(onClick = onDone) {
+                        Text(stringResource(R.string.action_cancel))
+                    }
                     if (state.id != 0L) {
-                        IconButton(onClick = { vm.delete(onDone) }) {
-                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.action_delete))
+                        TextButton(onClick = { vm.delete(onDone) }) {
+                            Text(stringResource(R.string.action_delete))
                         }
                     }
                 }
@@ -117,27 +105,10 @@ fun TaskEditScreen(
             }
 
             if (state.dueActive) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(
-                        onClick = { showDatePicker = true },
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Text(
-                            text = state.dueAtMs?.let { TimeFormat.format(it).substringBefore(",") }
-                                ?: stringResource(R.string.field_due_date)
-                        )
-                    }
-                    OutlinedButton(
-                        onClick = { showTimePicker = true },
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Text(
-                            text = state.dueAtMs?.let { TimeFormat.format(it).substringAfter(", ", "") }
-                                ?.takeIf { it.isNotBlank() }
-                                ?: stringResource(R.string.field_due_time)
-                        )
-                    }
-                }
+                DateTimeFields(
+                    dueAtMs = state.dueAtMs,
+                    onDueAtChange = vm::updateDueAt,
+                )
             }
 
             Column {
@@ -160,89 +131,66 @@ fun TaskEditScreen(
             }
         }
     }
+}
 
-    if (showDatePicker) {
-        val pickerState = rememberDatePickerState(
-            initialSelectedDateMillis = state.dueAtMs ?: System.currentTimeMillis(),
-        )
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    val datePart = pickerState.selectedDateMillis
-                    if (datePart != null) {
-                        val merged = mergeDate(datePart, state.dueAtMs)
-                        vm.updateDueAt(merged)
-                    }
-                    showDatePicker = false
-                }) { Text(stringResource(R.string.action_save)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text(stringResource(R.string.action_cancel))
-                }
-            },
-        ) {
-            DatePicker(state = pickerState)
-        }
-    }
+@Composable
+private fun DateTimeFields(
+    dueAtMs: Long?,
+    onDueAtChange: (Long?) -> Unit,
+) {
+    val initialMs = dueAtMs ?: defaultDueMs()
+    var dateValue by remember(dueAtMs) { mutableStateOf(dateFormat.format(Date(initialMs))) }
+    var timeValue by remember(dueAtMs) { mutableStateOf(timeFormat.format(Date(initialMs))) }
 
-    if (showTimePicker) {
-        val base = state.dueAtMs ?: System.currentTimeMillis()
-        val cal = Calendar.getInstance().apply { timeInMillis = base }
-        val pickerState = rememberTimePickerState(
-            initialHour = cal.get(Calendar.HOUR_OF_DAY),
-            initialMinute = cal.get(Calendar.MINUTE),
-            is24Hour = true,
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedTextField(
+            value = dateValue,
+            onValueChange = {
+                dateValue = it
+                parseDateTime(it, timeValue)?.let(onDueAtChange)
+            },
+            label = { Text(stringResource(R.string.field_due_date)) },
+            placeholder = { Text("TT.MM.JJJJ") },
+            modifier = Modifier.weight(1f),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         )
-        Dialog(onDismissRequest = { showTimePicker = false }) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                TimePicker(state = pickerState)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                ) {
-                    TextButton(onClick = { showTimePicker = false }) {
-                        Text(stringResource(R.string.action_cancel))
-                    }
-                    TextButton(onClick = {
-                        val merged = mergeTime(state.dueAtMs ?: System.currentTimeMillis(),
-                            pickerState.hour, pickerState.minute)
-                        vm.updateDueAt(merged)
-                        showTimePicker = false
-                    }) { Text(stringResource(R.string.action_save)) }
-                }
-            }
-        }
+        OutlinedTextField(
+            value = timeValue,
+            onValueChange = {
+                timeValue = it
+                parseDateTime(dateValue, it)?.let(onDueAtChange)
+            },
+            label = { Text(stringResource(R.string.field_due_time)) },
+            placeholder = { Text("HH:MM") },
+            modifier = Modifier.weight(1f),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        )
     }
 }
 
-private fun mergeDate(dateUtcMs: Long, existingMs: Long?): Long {
-    // DatePicker returns midnight UTC of the picked date. We extract Y/M/D in UTC,
-    // and combine with the existing hour/minute (or now's) in the local timezone.
-    val utc = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply { timeInMillis = dateUtcMs }
-    val year = utc.get(Calendar.YEAR)
-    val month = utc.get(Calendar.MONTH)
-    val day = utc.get(Calendar.DAY_OF_MONTH)
-
-    val base = existingMs ?: System.currentTimeMillis()
-    val local = Calendar.getInstance().apply { timeInMillis = base }
-    local.set(Calendar.YEAR, year)
-    local.set(Calendar.MONTH, month)
-    local.set(Calendar.DAY_OF_MONTH, day)
-    return local.timeInMillis
-}
-
-private fun mergeTime(existingMs: Long, hour: Int, minute: Int): Long {
-    val cal = Calendar.getInstance().apply { timeInMillis = existingMs }
-    cal.set(Calendar.HOUR_OF_DAY, hour)
-    cal.set(Calendar.MINUTE, minute)
+private fun defaultDueMs(): Long {
+    val cal = Calendar.getInstance()
+    cal.add(Calendar.HOUR_OF_DAY, 1)
     cal.set(Calendar.SECOND, 0)
     cal.set(Calendar.MILLISECOND, 0)
     return cal.timeInMillis
+}
+
+private fun parseDateTime(date: String, time: String): Long? {
+    return try {
+        val datePart = dateFormat.parse(date) ?: return null
+        val timePart = timeFormat.parse(time) ?: return null
+        val cal = Calendar.getInstance()
+        cal.time = datePart
+        val tc = Calendar.getInstance().apply { this.time = timePart }
+        cal.set(Calendar.HOUR_OF_DAY, tc.get(Calendar.HOUR_OF_DAY))
+        cal.set(Calendar.MINUTE, tc.get(Calendar.MINUTE))
+        cal.set(Calendar.SECOND, 0)
+        cal.set(Calendar.MILLISECOND, 0)
+        cal.timeInMillis
+    } catch (_: Exception) {
+        null
+    }
 }

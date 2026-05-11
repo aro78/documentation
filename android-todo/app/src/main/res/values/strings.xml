@@ -46,6 +46,8 @@
     <string name="perm_fsi">Vollbild-Alarm erlauben</string>
     <string name="perm_battery">Akku-Optimierung deaktivieren</string>
     <string name="perm_continue">Weiter</string>
+    <string name="perm_refresh">Berechtigungen neu prüfen</string>
+    <string name="perm_open">Öffnen</string>
     <string name="perm_granted">erteilt</string>
     <string name="perm_missing">fehlt</string>
 </resources>

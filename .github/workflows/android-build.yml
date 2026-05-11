@@ -46,14 +46,33 @@ jobs:
           java -version
           ./gradlew --version
 
-      - name: Compile Kotlin (isolated, for clearer error reporting)
-        run: ./gradlew :app:compileDebugKotlin --stacktrace
+      - name: Compile Kotlin
+        id: compile
+        run: |
+          set -o pipefail
+          ./gradlew :app:compileDebugKotlin --stacktrace --console=plain 2>&1 | tee /tmp/kotlin.log
 
-      - name: Process resources (isolated, for clearer error reporting)
-        run: ./gradlew :app:processDebugResources --stacktrace
+      - name: Print last 200 lines of Kotlin log on failure
+        if: failure() && steps.compile.outcome == 'failure'
+        run: |
+          echo "::group::Last 200 lines of /tmp/kotlin.log"
+          tail -n 200 /tmp/kotlin.log || true
+          echo "::endgroup::"
+          echo "::group::Grep for 'error:' in /tmp/kotlin.log"
+          grep -nE "error:|e: " /tmp/kotlin.log || true
+          echo "::endgroup::"
+
+      - name: Upload Kotlin compile log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kotlin-compile-log
+          path: /tmp/kotlin.log
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: Build debug APK
-        run: ./gradlew :app:assembleDebug --stacktrace
+        run: ./gradlew :app:assembleDebug --stacktrace --console=plain
 
       - name: Upload APK artifact
         if: success()
@@ -63,19 +82,6 @@ jobs:
           path: android-todo/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
-
-      - name: Print tail of all log/report files on failure
-        if: failure()
-        run: |
-          set +e
-          echo "::group::Find build outputs"
-          find app/build -type f \( -name "*.txt" -o -name "*.xml" -o -name "*.log" \) 2>/dev/null | head -100
-          echo "::endgroup::"
-          for f in $(find app/build -type f \( -name "*.txt" -o -name "*.xml" -o -name "*.log" \) 2>/dev/null); do
-            echo "::group::$f"
-            tail -n 200 "$f"
-            echo "::endgroup::"
-          done
 
       - name: Upload build reports on failure
         if: failure()
