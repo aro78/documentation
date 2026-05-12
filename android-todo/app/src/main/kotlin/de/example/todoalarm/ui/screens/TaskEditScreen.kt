@@ -145,9 +145,9 @@ private fun DateTimeFields(
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(
             value = dateValue,
-            onValueChange = {
-                dateValue = it
-                parseDateTime(it, timeValue)?.let(onDueAtChange)
+            onValueChange = { raw ->
+                dateValue = formatDateInput(raw)
+                parseDateTime(dateValue, timeValue)?.let(onDueAtChange)
             },
             label = { Text(stringResource(R.string.field_due_date)) },
             placeholder = { Text("TT.MM.JJJJ") },
@@ -157,9 +157,9 @@ private fun DateTimeFields(
         )
         OutlinedTextField(
             value = timeValue,
-            onValueChange = {
-                timeValue = it
-                parseDateTime(dateValue, it)?.let(onDueAtChange)
+            onValueChange = { raw ->
+                timeValue = formatTimeInput(raw)
+                parseDateTime(dateValue, timeValue)?.let(onDueAtChange)
             },
             label = { Text(stringResource(R.string.field_due_time)) },
             placeholder = { Text("HH:MM") },
@@ -167,6 +167,26 @@ private fun DateTimeFields(
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         )
+    }
+}
+
+private fun formatDateInput(raw: String): String {
+    val digits = raw.filter { it.isDigit() }.take(8)
+    return buildString {
+        digits.forEachIndexed { i, c ->
+            if (i == 2 || i == 4) append('.')
+            append(c)
+        }
+    }
+}
+
+private fun formatTimeInput(raw: String): String {
+    val digits = raw.filter { it.isDigit() }.take(4)
+    return buildString {
+        digits.forEachIndexed { i, c ->
+            if (i == 2) append(':')
+            append(c)
+        }
     }
 }
 
