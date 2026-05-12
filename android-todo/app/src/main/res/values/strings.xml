@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Aufgaben</string>
+
+    <!-- Liste -->
+    <string name="tab_open">Offene Aufgaben</string>
+    <string name="tab_done">Erledigt</string>
+    <string name="fab_add">Neue Aufgabe</string>
+    <string name="empty_open">Keine offenen Aufgaben.</string>
+    <string name="empty_done">Noch nichts erledigt.</string>
+
+    <!-- Edit -->
+    <string name="edit_new_title">Neue Aufgabe</string>
+    <string name="edit_edit_title">Aufgabe bearbeiten</string>
+    <string name="field_title">Titel</string>
+    <string name="field_notes">Notizen</string>
+    <string name="field_due_active">Termin aktiv</string>
+    <string name="field_due_date">Datum</string>
+    <string name="field_due_time">Uhrzeit</string>
+    <string name="field_realert">Re-Alert alle (Minuten)</string>
+    <string name="action_save">Speichern</string>
+    <string name="action_delete">Löschen</string>
+    <string name="action_cancel">Abbrechen</string>
+
+    <!-- Alarm -->
+    <string name="alarm_title">Aufgabe fällig</string>
+    <string name="alarm_acknowledge">Erledigt</string>
+    <string name="snooze_label">Schlummern</string>
+    <string name="snooze_1m">1 Min</string>
+    <string name="snooze_3m">3 Min</string>
+    <string name="snooze_10m">10 Min</string>
+    <string name="snooze_30m">30 Min</string>
+    <string name="snooze_1h">1 Std</string>
+    <string name="snooze_3h">3 Std</string>
+    <string name="snooze_1d">1 Tag</string>
+
+    <!-- Notification channel -->
+    <string name="channel_alarm_name">Aufgaben-Alarm</string>
+    <string name="channel_alarm_desc">Erinnerungen für fällige Aufgaben.</string>
+
+    <!-- Permissions -->
+    <string name="perm_title">Berechtigungen</string>
+    <string name="perm_intro">Damit Alarme zuverlässig auslösen, werden folgende Berechtigungen benötigt:</string>
+    <string name="perm_notif">Benachrichtigungen erlauben</string>
+    <string name="perm_exact">Exakte Wecker erlauben</string>
+    <string name="perm_fsi">Vollbild-Alarm erlauben</string>
+    <string name="perm_battery">Akku-Optimierung deaktivieren</string>
+    <string name="perm_continue">Weiter</string>
+    <string name="perm_refresh">Berechtigungen neu prüfen</string>
+    <string name="perm_open">Öffnen</string>
+    <string name="perm_granted">erteilt</string>
+    <string name="perm_missing">fehlt</string>
+</resources>
