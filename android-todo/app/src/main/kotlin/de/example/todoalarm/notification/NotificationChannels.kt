@@ -1,5 +1,6 @@
 package de.example.todoalarm.notification
 
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
@@ -32,7 +33,7 @@ object NotificationChannels {
             vibrationPattern = longArrayOf(0, 500, 500, 500, 500, 500)
             setSound(sound, attrs)
             setBypassDnd(true)
-            lockscreenVisibility = NotificationManager.VISIBILITY_PUBLIC
+            lockscreenVisibility = Notification.VISIBILITY_PUBLIC
         }
         nm.createNotificationChannel(channel)
     }
